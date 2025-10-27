@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>UANFilms - Catálogo</title>
+  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0 1rem; background:#f5f5f5; color:#222; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:1rem 0; }
+    nav a { margin-left:0.5rem; text-decoration:none; color:#0366d6; font-weight:600; }
+    #searchSection { margin:1rem 0; display:flex; gap:.5rem; align-items:center; }
+    #searchInput { flex:1; padding:.5rem; border:1px solid #ccc; border-radius:4px; }
+    #movieList { display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); margin-bottom:2rem; }
+    .movie-card { background:white; padding:0.75rem; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.08); display:flex; gap:.75rem; align-items:flex-start; }
+    .poster { width:96px; height:144px; flex:0 0 96px; background-size:cover; background-position:center; border-radius:4px; }
+    .meta { flex:1; }
+    .meta h3 { margin:.25rem 0; font-size:1.05rem; }
+    .meta p { margin:.25rem 0; font-size:.9rem; color:#444; }
+    .badges { display:flex; gap:.5rem; flex-wrap:wrap; margin:.4rem 0; }
+    .badge { background:#eee; padding:.25rem .5rem; border-radius:12px; font-size:.8rem; }
+    .actions { margin-top:.5rem; display:flex; gap:.5rem; }
+    button { background:#0366d6; color:white; border:none; padding:.4rem .6rem; border-radius:6px; cursor:pointer; }
+    button.secondary { background:#6c757d; }
+    footer { text-align:center; padding:1rem 0; color:#666; }
+    .hidden { display:none !important; }
+    #pagination { text-align:center; margin-bottom:2rem; }
+    #pagination button { margin:0 .25rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎬 UANFilms</h1>
+    <nav id="mainNav">
+      <a href="index.html">Inicio</a>
+      <a href="add-item.html">Agregar Película</a>
+      <a href="Login.html">Iniciar Sesión</a>
+      <a href="Resgistrer.html">Registrarse</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="searchSection">
+      <h2 style="margin:0; font-size:1.1rem;">Buscar película</h2>
+      <input type="text" id="searchInput" placeholder="Buscar por título, año, director o género...">
+      <button id="searchBtn">Buscar</button>
+      <button id="clearBtn" class="secondary">Limpiar</button>
+    </section>
+
+    <section id="movieList" aria-live="polite">
+      <h2 style="grid-column:1/-1; margin:0 0 .5rem 0; font-size:1.1rem;">Catálogo de películas</h2>
+      <p id="loadingMsg">Cargando películas...</p>
+    </section>
+
+    <div id="pagination">
+      <button id="prevPage" class="secondary" disabled>Anterior</button>
+      <span id="pageInfo">Página 1</span>
+      <button id="nextPage">Siguiente</button>
+    </div>
+
+    <footer>
+      © UANFilms — Catálogo conectado a la base de datos.
+    </footer>
+  </main>
+
+  <script>
+    const movieList = document.getElementById('movieList');
+    const input = document.getElementById('searchInput');
+    const btn = document.getElementById('searchBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    const MOVIES_PER_PAGE = 16;
+
+    let peliculas = [];
+    let currentPage = 1;
+
+    // === CARGAR PELÍCULAS DESDE MYSQL ===
+    async function cargarPeliculas() {
+      try {
+        const res = await fetch('http://localhost:3000/api/peliculas');
+        if (!res.ok) throw new Error('Error al conectar con el servidor');
+        peliculas = await res.json();
+        renderPeliculas();
+      } catch (err) {
+        movieList.innerHTML = `<p style="color:red;">No se pudieron cargar las películas: ${err.message}</p>`;
+        console.error(err);
+      }
+    }
+
+    // === MOSTRAR PELÍCULAS POR PÁGINA ===
+    function renderPeliculas() {
+      const start = (currentPage - 1) * MOVIES_PER_PAGE;
+      const end = start + MOVIES_PER_PAGE;
+      const pagePeliculas = peliculas.slice(start, end);
+
+      movieList.innerHTML = `
+        <h2 style="grid-column:1/-1; margin:0 0 .5rem 0; font-size:1.1rem;">Catálogo de películas</h2>
+      `;
+
+      if (pagePeliculas.length === 0) {
+        movieList.innerHTML += '<p>No hay películas registradas aún.</p>';
+        return;
+      }
+
+      pagePeliculas.forEach(p => {
+        const card = document.createElement('article');
+        card.className = 'movie-card';
+        card.dataset.id = p.id;
+        card.dataset.title = p.titulo;
+        card.dataset.year = p.anio;
+        card.dataset.director = p.director;
+        card.dataset.genre = p.genero;
+
+        const poster = p.poster ? p.poster : 'https://via.placeholder.com/96x144?text=No+Image';
+        card.innerHTML = `
+          <div class="poster" style="background-image:url('${poster}');"></div>
+          <div class="meta">
+            <h3>${p.titulo} (${p.anio})</h3>
+            <div class="badges">
+              <span class="badge">Género: ${p.genero}</span>
+              <span class="badge">Director: ${p.director}</span>
+            </div>
+            <p>${p.descripcion || 'Sin descripción disponible.'}</p>
+            <div class="actions">
+              <button class="opinionsBtn">Ir a opiniones</button>
+              <button class="watchBtn secondary">Agregar a ver más tarde</button>
+            </div>
+          </div>
+        `;
+        movieList.appendChild(card);
+      });
+
+      activarBotones();
+      actualizarPaginacion();
+    }
+
+    // === ACTUALIZAR BOTONES DE PÁGINA ===
+    function actualizarPaginacion() {
+      const totalPages = Math.ceil(peliculas.length / MOVIES_PER_PAGE);
+      pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPeliculas();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(peliculas.length / MOVIES_PER_PAGE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderPeliculas();
+      }
+    });
+
+    // === FILTRO DE BÚSQUEDA ===
+    function normalize(s){ return (s||'').toString().toLowerCase(); }
+
+    function filter(query){
+      const q = normalize(query).split(/\s+/).filter(Boolean);
+      const filtradas = peliculas.filter(p => {
+        const hay = [p.titulo, p.anio, p.director, p.genero].join(' ').toLowerCase();
+        return q.every(token => hay.includes(token));
+      });
+      currentPage = 1;
+      peliculas = filtradas;
+      renderPeliculas();
+    }
+
+    btn.addEventListener('click', () => filter(input.value));
+    input.addEventListener('keydown', (e) => { if(e.key === 'Enter') filter(input.value); });
+    clearBtn.addEventListener('click', () => { input.value=''; cargarPeliculas(); });
+
+    // === SESIÓN ===
+    (function(){
+      const nav = document.getElementById('mainNav');
+      const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
+      if (user) {
+        nav.innerHTML = `
+          <a href="index.html">Inicio</a>
+          <a href="add-item.html">Agregar Película</a>
+          <a href="perfil.html">Mi Perfil</a>
+          <button id="logoutBtn" style="background:#d33;color:white;border:none;border-radius:6px;padding:.3rem .6rem;cursor:pointer;">Cerrar sesión</button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+          localStorage.removeItem('uanfilmsUser');
+          location.reload();
+        });
+      } else {
+        const addLink = nav.querySelector('a[href="add-item.html"]');
+        if (addLink) addLink.classList.add('hidden');
+      }
+    })();
+
+    // === BOTONES DE ACCIÓN ===
+    function activarBotones() {
+      // Botón "Ir a opiniones"
+      document.querySelectorAll('.opinionsBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
+          const card = e.target.closest('.movie-card');
+          const id = card.dataset.id;
+
+          if (!user) {
+            alert('Debes iniciar sesión para ver y dejar opiniones.');
+            window.location.href = `Login.html?next=opiniones.html?pelicula=${id}`;
+            return;
+          }
+
+          window.location.href = `opiniones.html?pelicula=${id}`;
+        });
+      });
+
+      // Botón "Agregar a ver más tarde"
+      document.querySelectorAll('.watchBtn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
+          if (!user) {
+            alert('Debes iniciar sesión para agregar películas a tu lista.');
+            window.location.href = 'Login.html?next=index.html';
+            return;
+          }
+          const card = e.target.closest('.movie-card');
+          alert(`"${card.dataset.title}" se agregó a tu lista.`);
+        });
+      });
+    }
+
+    // === INICIO ===
+    cargarPeliculas();
+  </script>
+</body>
+</html>

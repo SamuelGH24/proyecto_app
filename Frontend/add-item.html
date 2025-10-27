@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agregar Película - GameRate</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Agregar Nueva Película</h1>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="add-item.html" class="active">Agregar Película</a>
+      <a href="login.html">Cerrar Sesión</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="addMovieSection">
+      <h2>Formulario de registro de película</h2>
+
+      <form id="addMovieForm">
+        <label for="titulo">Título:</label>
+        <input type="text" id="titulo" name="titulo" required />
+
+        <label for="anio">Año:</label>
+        <input type="number" id="anio" name="anio" min="1880" max="2100" required />
+
+        <label for="director">Director:</label>
+        <input type="text" id="director" name="director" required />
+
+        <label for="elenco">Elenco:</label>
+        <input type="text" id="elenco" name="elenco" placeholder="Actores principales" />
+
+        <label for="genero">Género:</label>
+        <input type="text" id="genero" name="genero" required />
+
+        <label for="descripcion">Descripción:</label>
+        <textarea id="descripcion" name="descripcion" rows="4" required></textarea>
+
+        <label for="poster">URL del Póster:</label>
+        <input type="url" id="poster" name="poster" placeholder="https://..." />
+
+        <button type="submit">Guardar Película</button>
+      </form>
+
+      <p id="statusMsg" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script>
+    async function generarHash(texto) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(texto);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    document.getElementById('addMovieForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const titulo = document.getElementById('titulo').value.trim();
+      const anio = document.getElementById('anio').value.trim();
+      const director = document.getElementById('director').value.trim();
+      const elenco = document.getElementById('elenco').value.trim();
+      const genero = document.getElementById('genero').value.trim();
+      const descripcion = document.getElementById('descripcion').value.trim();
+      const poster = document.getElementById('poster').value.trim();
+      const msg = document.getElementById('statusMsg');
+
+      try {
+        const codigo_hash = await generarHash(`${titulo}${anio}${director}`);
+
+        const res = await fetch('/api/peliculas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo,
+            anio,
+            director,
+            elenco,
+            genero,
+            descripcion,
+            poster,
+            codigo_hash
+          })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          msg.textContent = '✅ Película agregada correctamente.';
+          msg.style.color = 'green';
+          e.target.reset();
+        } else {
+          msg.textContent = '❌ ' + (data.error || 'Error al guardar la película.');
+          msg.style.color = 'red';
+        }
+      } catch (err) {
+        msg.textContent = '❌ Error de red o encriptación.';
+        msg.style.color = 'red';
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
