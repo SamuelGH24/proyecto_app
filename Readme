@@ -1,0 +1,38 @@
+# 🎬 Proyecto UANFilms
+
+**Electiva III – Computación en la Nube**  
+Avance 1 - 2023-1  
+Universidad Antonio Nariño
+
+---
+
+## 📖 Descripción general
+
+Este proyecto implementa un sistema web tipo **3 capas (3-tier)** que permite:
+- Registro e inicio de sesión de usuarios  
+- Visualización de películas con detalles  
+- Adición de nuevas películas  
+- Creación y listado de reseñas y calificaciones  
+
+El sistema está desarrollado en **Node.js**, usa **MySQL** como base de datos relacional y se comunica mediante **API REST** entre el frontend y el backend.
+
+---
+
+## ⚙️ Estructura del proyecto
+
+### 🧠 Pasos para ejecución
+
+1. **Importar la base de datos:**
+   - Abrir MySQL Workbench.
+   - Crear un esquema llamado `uan_db`.
+   - Importar el archivo `Database/uan_db.sql`.
+
+2. **Verificar el archivo `.env` en `/backend`:**
+DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASSWORD=2424
+DB_NAME=uan_db
+PORT=3000
+
+yaml
+Copiar código

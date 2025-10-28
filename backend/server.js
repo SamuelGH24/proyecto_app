@@ -1,20 +1,22 @@
 // === DEPENDENCIAS ===
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
+// === CONFIGURACIÓN DEL SERVIDOR ===
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // === CONEXIÓN A MYSQL ===
 const db = mysql.createConnection({
-  host: '127.0.0.1',
-  user: 'root',
-  password: '2424',
-  database: 'uan_db',
+  host: process.env.DB_HOST || '127.0.0.1',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'uan_db',
   multipleStatements: false
 });
 
@@ -22,11 +24,11 @@ db.connect(err => {
   if (err) {
     console.error('❌ Error al conectar con MySQL:', err.message);
   } else {
-    console.log('✅ Conectado a la base de datos: uan_db');
+    console.log(`✅ Conectado a la base de datos: ${process.env.DB_NAME}`);
   }
 });
 
-// === ARCHIVOS ESTÁTICOS (AJUSTADO A CARPETA Frontend) ===
+// === ARCHIVOS ESTÁTICOS (CARPETA FRONTEND) ===
 const publicDir = path.join(__dirname, '..', 'Frontend');
 app.use(express.static(publicDir));
 
