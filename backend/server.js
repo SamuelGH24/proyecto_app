@@ -15,7 +15,7 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '2424',
   database: process.env.DB_NAME || 'uan_db',
   multipleStatements: false
 });
