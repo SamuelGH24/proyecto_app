@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Verificar Email - UANFilms</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    main {
+      max-width: 500px;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.2);
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #0366d6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .success-icon {
+      font-size: 4rem;
+      color: #28a745;
+      animation: scaleIn 0.5s ease-out;
+    }
+    .error-icon {
+      font-size: 4rem;
+      color: #dc3545;
+      animation: scaleIn 0.5s ease-out;
+    }
+    @keyframes scaleIn {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    h1 {
+      color: #333;
+      margin: 1rem 0;
+      font-size: 1.5rem;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+      margin: .75rem 0;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: .75rem 2rem;
+      border-radius: 8px;
+      border: none;
+      background: #0366d6;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background .3s;
+    }
+    button:hover {
+      background: #0256c4;
+    }
+    button.secondary {
+      background: #6c757d;
+    }
+    button.secondary:hover {
+      background: #5a6268;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <!-- Estado: Verificando -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <h1>Verificando tu correo...</h1>
+      <p>Por favor espera un momento.</p>
+    </div>
+
+    <!-- Estado: Éxito -->
+    <div id="success" class="hidden">
+      <div class="success-icon">✓</div>
+      <h1>¡Correo verificado!</h1>
+      <p id="welcomeMsg">Tu cuenta ha sido activada exitosamente.</p>
+      <p>Ya puedes iniciar sesión y disfrutar de UANFilms.</p>
+      <button id="loginBtn">Ir a Iniciar Sesión</button>
+    </div>
+
+    <!-- Estado: Error -->
+    <div id="error" class="hidden">
+      <div class="error-icon">✕</div>
+      <h1>Error de verificación</h1>
+      <p id="errorMsg">No se pudo verificar tu correo.</p>
+      <div style="margin-top:1rem;">
+        <button id="retryBtn" class="secondary">Intentar de nuevo</button>
+        <button id="homeBtn">Volver al inicio</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      const loading = document.getElementById('loading');
+      const success = document.getElementById('success');
+      const error = document.getElementById('error');
+      const errorMsg = document.getElementById('errorMsg');
+      const welcomeMsg = document.getElementById('welcomeMsg');
+      const loginBtn = document.getElementById('loginBtn');
+      const retryBtn = document.getElementById('retryBtn');
+      const homeBtn = document.getElementById('homeBtn');
+
+      // Obtener token de la URL
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+
+      if(!token){
+        showError('Token de verificación no encontrado en la URL.');
+        return;
+      }
+
+      // Verificar el token
+      verificarEmail(token);
+
+      async function verificarEmail(token) {
+        try {
+          const res = await fetch(`http://localhost:3000/api/verificar-email?token=${encodeURIComponent(token)}`);
+          const data = await res.json();
+
+          if(res.ok){
+            // Éxito
+            welcomeMsg.textContent = `¡Bienvenido/a ${data.nombre}! Tu cuenta ha sido activada exitosamente.`;
+            showSuccess(data.email);
+          } else {
+            // Error
+            showError(data.error || 'No se pudo verificar el correo.');
+          }
+        } catch (err) {
+          showError('No se pudo conectar con el servidor. Verifica tu conexión a internet.');
+          console.error('Error:', err);
+        }
+      }
+
+      function showSuccess(email) {
+        loading.classList.add('hidden');
+        success.classList.remove('hidden');
+        
+        loginBtn.onclick = () => {
+          window.location.href = `Login.html?email=${encodeURIComponent(email)}`;
+        };
+      }
+
+      function showError(message) {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        errorMsg.textContent = message;
+
+        retryBtn.onclick = () => {
+          location.reload();
+        };
+
+        homeBtn.onclick = () => {
+          window.location.href = 'index.html';
+        };
+      }
+    })();
+  </script>
+</body>
+</html>

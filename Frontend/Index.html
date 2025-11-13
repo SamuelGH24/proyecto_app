@@ -85,18 +85,17 @@
         renderPeliculas();
       } catch (err) {
         movieList.innerHTML = `<p style="color:red;">No se pudieron cargar las películas: ${err.message}</p>`;
-        console.error(err);
       }
     }
 
-    // === MOSTRAR PELÍCULAS POR PÁGINA ===
+    // === MOSTRAR PELÍCULAS ===
     function renderPeliculas() {
       const start = (currentPage - 1) * MOVIES_PER_PAGE;
       const end = start + MOVIES_PER_PAGE;
       const pagePeliculas = peliculas.slice(start, end);
 
       movieList.innerHTML = `
-        <h2 style="grid-column:1/-1; margin:0 0 .5rem 0; font-size:1.1rem;">Catálogo de películas</h2>
+        <h2 style="grid-column:1/-1; margin:0 0 .5rem 0;">Catálogo de películas</h2>
       `;
 
       if (pagePeliculas.length === 0) {
@@ -109,9 +108,6 @@
         card.className = 'movie-card';
         card.dataset.id = p.id;
         card.dataset.title = p.titulo;
-        card.dataset.year = p.anio;
-        card.dataset.director = p.director;
-        card.dataset.genre = p.genero;
 
         const poster = p.poster ? p.poster : 'https://via.placeholder.com/96x144?text=No+Image';
         card.innerHTML = `
@@ -136,7 +132,7 @@
       actualizarPaginacion();
     }
 
-    // === ACTUALIZAR BOTONES DE PÁGINA ===
+    // === PAGINACIÓN ===
     function actualizarPaginacion() {
       const totalPages = Math.ceil(peliculas.length / MOVIES_PER_PAGE);
       pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
@@ -144,38 +140,30 @@
       nextBtn.disabled = currentPage === totalPages;
     }
 
-    prevBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderPeliculas();
-      }
-    });
-
-    nextBtn.addEventListener('click', () => {
+    prevBtn.onclick = () => {
+      if (currentPage > 1) { currentPage--; renderPeliculas(); }
+    };
+    nextBtn.onclick = () => {
       const totalPages = Math.ceil(peliculas.length / MOVIES_PER_PAGE);
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderPeliculas();
-      }
-    });
+      if (currentPage < totalPages) { currentPage++; renderPeliculas(); }
+    };
 
     // === FILTRO DE BÚSQUEDA ===
     function normalize(s){ return (s||'').toString().toLowerCase(); }
-
     function filter(query){
       const q = normalize(query).split(/\s+/).filter(Boolean);
       const filtradas = peliculas.filter(p => {
-        const hay = [p.titulo, p.anio, p.director, p.genero].join(' ').toLowerCase();
-        return q.every(token => hay.includes(token));
+        const texto = [p.titulo, p.anio, p.director, p.genero].join(' ').toLowerCase();
+        return q.every(token => texto.includes(token));
       });
       currentPage = 1;
       peliculas = filtradas;
       renderPeliculas();
     }
 
-    btn.addEventListener('click', () => filter(input.value));
-    input.addEventListener('keydown', (e) => { if(e.key === 'Enter') filter(input.value); });
-    clearBtn.addEventListener('click', () => { input.value=''; cargarPeliculas(); });
+    btn.onclick = () => filter(input.value);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') filter(input.value); });
+    clearBtn.onclick = () => { input.value=''; cargarPeliculas(); };
 
     // === SESIÓN ===
     (function(){
@@ -188,47 +176,57 @@
           <a href="perfil.html">Mi Perfil</a>
           <button id="logoutBtn" style="background:#d33;color:white;border:none;border-radius:6px;padding:.3rem .6rem;cursor:pointer;">Cerrar sesión</button>
         `;
-        document.getElementById('logoutBtn').addEventListener('click', () => {
+        document.getElementById('logoutBtn').onclick = () => {
           localStorage.removeItem('uanfilmsUser');
           location.reload();
-        });
-      } else {
-        const addLink = nav.querySelector('a[href="add-item.html"]');
-        if (addLink) addLink.classList.add('hidden');
+        };
       }
     })();
 
     // === BOTONES DE ACCIÓN ===
     function activarBotones() {
-      // Botón "Ir a opiniones"
       document.querySelectorAll('.opinionsBtn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
+        btn.onclick = e => {
           const card = e.target.closest('.movie-card');
           const id = card.dataset.id;
-
+          const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
           if (!user) {
-            alert('Debes iniciar sesión para ver y dejar opiniones.');
+            alert('Debes iniciar sesión para ver opiniones.');
             window.location.href = `Login.html?next=opiniones.html?pelicula=${id}`;
             return;
           }
-
           window.location.href = `opiniones.html?pelicula=${id}`;
-        });
+        };
       });
 
-      // Botón "Agregar a ver más tarde"
       document.querySelectorAll('.watchBtn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.onclick = async e => {
           const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
           if (!user) {
             alert('Debes iniciar sesión para agregar películas a tu lista.');
-            window.location.href = 'Login.html?next=index.html';
+            window.location.href = 'Login.html';
             return;
           }
           const card = e.target.closest('.movie-card');
-          alert(`"${card.dataset.title}" se agregó a tu lista.`);
-        });
+          const peliculaId = Number(card.dataset.id);
+
+          try {
+            const res = await fetch('http://localhost:3000/api/ver-mas-tarde', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ usuario_id: user.id, pelicula_id: peliculaId })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              alert(`"${card.dataset.title}" se agregó a tu lista.`);
+            } else {
+              alert(data.message || 'Esa película ya está en tu lista.');
+            }
+          } catch (err) {
+            alert('Error al agregar la película.');
+            console.error(err);
+          }
+        };
       });
     }
 
