@@ -1,18 +1,32 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Agregar Película - GameRate</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <title>Agregar Película - UANFilms</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0 1rem; background:#f5f5f5; color:#222; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:1rem 0; }
+    nav a { margin-left:0.5rem; text-decoration:none; color:#0366d6; font-weight:600; }
+    nav a.active { text-decoration:underline; }
+    main { max-width:700px; margin:0 auto; background:white; padding:1.5rem; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); }
+    h1, h2 { margin-top:0; }
+    form { display:flex; flex-direction:column; gap:0.75rem; }
+    label { font-weight:bold; }
+    input, textarea { padding:0.5rem; border:1px solid #ccc; border-radius:4px; font-family:inherit; font-size:1rem; }
+    button { background:#0366d6; color:white; border:none; padding:0.6rem 1rem; border-radius:6px; cursor:pointer; font-weight:600; }
+    button:hover { background:#024b9a; }
+    #statusMsg { margin-top:1rem; font-weight:bold; }
+    footer { text-align:center; margin:2rem 0 1rem; color:#666; }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Agregar Nueva Película</h1>
+    <h1>🎬 UANFilms</h1>
     <nav>
       <a href="index.html">Inicio</a>
       <a href="add-item.html" class="active">Agregar Película</a>
-      <a href="login.html">Cerrar Sesión</a>
+      <a href="Login.html">Cerrar Sesión</a>
     </nav>
   </header>
 
@@ -22,25 +36,25 @@
 
       <form id="addMovieForm">
         <label for="titulo">Título:</label>
-        <input type="text" id="titulo" name="titulo" required />
+        <input type="text" id="titulo" name="titulo" required>
 
         <label for="anio">Año:</label>
-        <input type="number" id="anio" name="anio" min="1880" max="2100" required />
+        <input type="number" id="anio" name="anio" min="1880" max="2100" required>
 
         <label for="director">Director:</label>
-        <input type="text" id="director" name="director" required />
+        <input type="text" id="director" name="director" required>
 
         <label for="elenco">Elenco:</label>
-        <input type="text" id="elenco" name="elenco" placeholder="Actores principales" />
+        <input type="text" id="elenco" name="elenco" placeholder="Actores principales">
 
         <label for="genero">Género:</label>
-        <input type="text" id="genero" name="genero" required />
+        <input type="text" id="genero" name="genero" required>
 
         <label for="descripcion">Descripción:</label>
         <textarea id="descripcion" name="descripcion" rows="4" required></textarea>
 
         <label for="poster">URL del Póster:</label>
-        <input type="url" id="poster" name="poster" placeholder="https://..." />
+        <input type="url" id="poster" name="poster" placeholder="https://...">
 
         <button type="submit">Guardar Película</button>
       </form>
@@ -48,6 +62,10 @@
       <p id="statusMsg" aria-live="polite"></p>
     </section>
   </main>
+
+  <footer>
+    © UANFilms — Registro de nuevas películas.
+  </footer>
 
   <script>
     async function generarHash(texto) {
@@ -73,18 +91,11 @@
       try {
         const codigo_hash = await generarHash(`${titulo}${anio}${director}`);
 
-        const res = await fetch('/api/peliculas', {
+        const res = await fetch('http://localhost:3000/api/peliculas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            titulo,
-            anio,
-            director,
-            elenco,
-            genero,
-            descripcion,
-            poster,
-            codigo_hash
+            titulo, anio, director, elenco, genero, descripcion, poster, codigo_hash
           })
         });
 

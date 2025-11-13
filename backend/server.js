@@ -5,26 +5,43 @@ const mysql = require('mysql2');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs'); // ✅ Agregado para leer el certificado SSL
+const { BlobServiceClient } = require('@azure/storage-blob'); // ✅ Para subir archivos al Blob Storage
 
 // === CONFIGURACIÓN DEL SERVIDOR ===
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// === CONEXIÓN A MYSQL ===
-const db = mysql.createConnection({
+// === CONFIGURAR CONEXIÓN MYSQL (con soporte SSL para Azure) ===
+const dbConfig = {
   host: process.env.DB_HOST || '127.0.0.1',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '2424',
   database: process.env.DB_NAME || 'uan_db',
   multipleStatements: false
-});
+};
+
+// ✅ Si el host contiene “.azure.com”, forzamos conexión segura con SSL
+if ((dbConfig.host || '').includes('azure.com')) {
+  try {
+    dbConfig.ssl = {
+      ca: fs.readFileSync(path.join(__dirname, 'DigiCertGlobalRootG2.crt.pem'))
+    };
+    console.log('🔒 SSL habilitado para conexión segura con Azure MySQL');
+  } catch (err) {
+    console.warn('⚠️ No se pudo leer el certificado SSL. Verifica la ruta del archivo.');
+  }
+}
+
+// === CONEXIÓN A MYSQL ===
+const db = mysql.createConnection(dbConfig);
 
 db.connect(err => {
   if (err) {
     console.error('❌ Error al conectar con MySQL:', err.message);
   } else {
-    console.log(`✅ Conectado a la base de datos: ${process.env.DB_NAME}`);
+    console.log(`✅ Conectado a la base de datos: ${dbConfig.database}`);
   }
 });
 
@@ -160,8 +177,8 @@ app.get('/api/resenas/:peliculaId', (req, res) => {
   });
 });
 
-// === ENDPOINT: AGREGAR NUEVA RESEÑA ===
-app.post('/api/resenas', (req, res) => {
+// === ENDPOINT: AGREGAR NUEVA RESEÑA (con archivo en Blob Storage) ===
+app.post('/api/resenas', async (req, res) => {
   const { usuario_id, pelicula_id, texto, calificacion } = req.body || {};
   if (!usuario_id || !pelicula_id || !texto || !calificacion)
     return res.status(400).json({ error: 'Faltan campos requeridos.' });
@@ -170,12 +187,41 @@ app.post('/api/resenas', (req, res) => {
     INSERT INTO resenas (usuario_id, pelicula_id, texto, calificacion, fecha)
     VALUES (?, ?, ?, ?, NOW())
   `;
-  db.query(sql, [usuario_id, pelicula_id, texto, calificacion], (err, result) => {
+
+  db.query(sql, [usuario_id, pelicula_id, texto, calificacion], async (err, result) => {
     if (err) {
       console.error('❌ Error al agregar reseña:', err);
       return res.status(500).json({ error: 'Error al guardar reseña' });
     }
-    res.json({ message: 'Reseña guardada exitosamente', id: result.insertId });
+
+    const reseñaId = result.insertId;
+    console.log(`✅ Reseña ${reseñaId} guardada. Generando archivo...`);
+
+    // === CREAR ARCHIVO DE TEXTO Y SUBIRLO AL BLOB STORAGE ===
+    try {
+      const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+      if (!connectionString) throw new Error('Falta la cadena de conexión de Azure Storage.');
+
+      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      const containerName = "resenas";
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+      await containerClient.createIfNotExists();
+
+      const fileName = `resena_${reseñaId}.txt`;
+      const blobClient = containerClient.getBlockBlobClient(fileName);
+
+      const contenido = texto.toLowerCase();
+      await blobClient.upload(contenido, Buffer.byteLength(contenido));
+      const blobUrl = blobClient.url;
+
+      // Guardar la URL del archivo en la base de datos (opcional)
+      db.query('UPDATE resenas SET archivo_url = ? WHERE id = ?', [blobUrl, reseñaId]);
+      console.log(`📄 Archivo de reseña subido: ${blobUrl}`);
+    } catch (e) {
+      console.error('⚠️ Error al subir reseña a Blob Storage:', e.message);
+    }
+
+    res.json({ message: 'Reseña guardada exitosamente', id: reseñaId });
   });
 });
 
