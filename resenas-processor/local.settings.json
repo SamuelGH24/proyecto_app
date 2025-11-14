@@ -1,0 +1,12 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AZURE_STORAGE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=uanfilmsstorage;AccountKey=Wtq/+ZvWXkDFqY8jeM3TiM5A6Gh7EVQIc2kXmqXxPwiVQUtgiOxuIvf1e8FFVqEKod65bFpMVuVX+AStsRYJqw==;BlobEndpoint=https://uanfilmsstorage.blob.core.windows.net/;FileEndpoint=https://uanfilmsstorage.file.core.windows.net/;QueueEndpoint=https://uanfilmsstorage.queue.core.windows.net/;TableEndpoint=https://uanfilmsstorage.table.core.windows.net/",
+    "DB_HOST": "uanfilmsdb.mysql.database.azure.com",
+    "DB_USER": "azureuser",
+    "DB_PASSWORD": "UanFilms2025!",
+    "DB_NAME": "uan_db"
+  }
+}
