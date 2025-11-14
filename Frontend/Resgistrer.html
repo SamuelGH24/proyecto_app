@@ -30,6 +30,7 @@
       padding: .6rem;
       border: 1px solid #ccc;
       border-radius: 6px;
+      box-sizing: border-box;
     }
     button {
       margin-top: .75rem;
@@ -39,19 +40,46 @@
       background: #0366d6;
       color: #fff;
       cursor: pointer;
+      width: 100%;
     }
     button.secondary {
       background: #6c757d;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
     .error {
       color: #c00;
       margin-top: .5rem;
       font-size: .9rem;
+      padding: .5rem;
+      background: #fee;
+      border-radius: 4px;
+      border: 1px solid #fcc;
     }
     .success {
-      color: green;
+      color: #0a6e0a;
       margin-top: .5rem;
       font-size: .9rem;
+      padding: .5rem;
+      background: #e8f5e8;
+      border-radius: 4px;
+      border: 1px solid #b8e6b8;
+    }
+    .info {
+      color: #0366d6;
+      margin-top: .5rem;
+      font-size: .9rem;
+      padding: .75rem;
+      background: #e6f2ff;
+      border-radius: 4px;
+      border: 1px solid #b3d9ff;
+    }
+    .info strong {
+      display: block;
+      margin-bottom: .5rem;
+      font-size: 1rem;
     }
     footer {
       margin-top: .75rem;
@@ -62,6 +90,9 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: .5rem;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -76,7 +107,7 @@
       <label for="name">Nombre completo</label>
       <input id="name" name="name" type="text" required placeholder="Tu nombre completo">
 
-      <label for="email">Correo</label>
+      <label for="email">Correo electrónico</label>
       <input id="email" name="email" type="email" required placeholder="tu@correo.com">
 
       <div class="row">
@@ -90,9 +121,9 @@
         </div>
       </div>
 
-      <div id="msg" class="error" aria-live="polite"></div>
+      <div id="msg" class="hidden" aria-live="polite"></div>
 
-      <button type="submit">Registrarme</button>
+      <button type="submit" id="submitBtn">Registrarme</button>
       <button type="button" id="cancelBtn" class="secondary">Cancelar</button>
     </form>
 
@@ -110,12 +141,29 @@
       const form = document.getElementById('registerForm');
       const msg = document.getElementById('msg');
       const cancelBtn = document.getElementById('cancelBtn');
+      const submitBtn = document.getElementById('submitBtn');
 
-      function showError(text){ msg.className='error'; msg.textContent = text; }
-      function showSuccess(text){ msg.className='success'; msg.textContent = text; }
+      function showError(text){ 
+        msg.className='error'; 
+        msg.textContent = text; 
+        msg.classList.remove('hidden');
+      }
+      
+      function showSuccess(text){ 
+        msg.className='success'; 
+        msg.textContent = text; 
+        msg.classList.remove('hidden');
+      }
+
+      function showInfo(html){
+        msg.className='info';
+        msg.innerHTML = html;
+        msg.classList.remove('hidden');
+      }
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        msg.classList.add('hidden');
         msg.textContent = '';
 
         const name = (document.getElementById('name').value||'').trim();
@@ -124,28 +172,32 @@
         const confirm = (document.getElementById('confirm').value||'');
 
         if(!name || !email || !password || !confirm){
-          showError('Completa todos los campos.');
+          showError('⚠️ Completa todos los campos.');
           return;
         }
 
         const emailRe = /^\S+@\S+\.\S+$/;
         if(!emailRe.test(email)){
-          showError('Correo inválido.');
+          showError('⚠️ Correo inválido.');
           return;
         }
 
         if(password.length < 6){
-          showError('La contraseña debe tener al menos 6 caracteres.');
+          showError('⚠️ La contraseña debe tener al menos 6 caracteres.');
           return;
         }
 
         if(password !== confirm){
-          showError('Las contraseñas no coinciden.');
+          showError('⚠️ Las contraseñas no coinciden.');
           return;
         }
 
+        // Deshabilitar botón
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Registrando...';
+
         try {
-          const res = await fetch('http://localhost:3000/api/register', {
+          const res = await fetch('http://172.177.1.151:3000/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre: name, email, password })
@@ -155,16 +207,35 @@
 
           if (!res.ok) {
             showError(data.error || 'Error al registrar.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Registrarme';
             return;
           }
 
-          showSuccess('Registro completado. Redirigiendo a iniciar sesión...');
+          // Mostrar mensaje de éxito con instrucciones
+          showInfo(`
+            <strong>✅ ¡Registro exitoso!</strong>
+            <p style="margin:.5rem 0;">Hemos enviado un correo de verificación a <strong>${email}</strong></p>
+            <p style="margin:.5rem 0;">Por favor, revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace de verificación para activar tu cuenta.</p>
+            <p style="margin:.5rem 0; font-size:.85rem; color:#666;">Redirigiendo al login en 5 segundos...</p>
+          `);
+
+          // Deshabilitar formulario
+          form.querySelectorAll('input').forEach(input => input.disabled = true);
+          submitBtn.disabled = true;
+          submitBtn.textContent = '✓ Registrado';
+          cancelBtn.textContent = 'Cerrar';
+
+          // Redirigir después de 5 segundos
           setTimeout(() => {
-            window.location.href = 'Login.html?email=' + encodeURIComponent(email);
-          }, 900);
+            window.location.href = 'Login.html?email=' + encodeURIComponent(email) + '&registered=1';
+          }, 5000);
 
         } catch (err) {
-          showError('No se pudo conectar con el servidor.');
+          showError('❌ No se pudo conectar con el servidor. Verifica tu conexión.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Registrarme';
+          console.error('Error:', err);
         }
       });
 

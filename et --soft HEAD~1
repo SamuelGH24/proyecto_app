@@ -1,0 +1,112 @@
+[33mcommit b1c9390b5ef8c3b9130e13ae7da695fd1f4c41ba[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mactualizacion-azure[m[33m, [m[1;32mmain[m[33m)[m
+Author: SamulGH24 <sgerena56@uan.edu.co>
+Date:   Wed Nov 12 22:07:52 2025 -0500
+
+    Migración completa a MySQL Azure y eliminación de carpeta local MySQL
+
+[1mdiff --git a/Database/uan_db.sql b/Database/uan_db.sql[m
+[1mdeleted file mode 100644[m
+[1mindex 8a60d76..0000000[m
+[1m--- a/Database/uan_db.sql[m
+[1m+++ /dev/null[m
+[36m@@ -1,72 +0,0 @@[m
+[31m-CREATE DATABASE uan_db;[m
+[31m-USE uan_db;[m
+[31m-CREATE TABLE usuarios ([m
+[31m-  id INT AUTO_INCREMENT PRIMARY KEY,[m
+[31m-  nombre VARCHAR(100) NOT NULL,[m
+[31m-  email VARCHAR(150) UNIQUE NOT NULL,[m
+[31m-  password_hash VARCHAR(255) NOT NULL,[m
+[31m-  fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP[m
+[31m-);[m
+[31m-CREATE TABLE peliculas ([m
+[31m-  id INT AUTO_INCREMENT PRIMARY KEY,[m
+[31m-  titulo VARCHAR(200) NOT NULL,[m
+[31m-  anio INT,[m
+[31m-  director VARCHAR(100),[m
+[31m-  elenco TEXT,[m
+[31m-  genero VARCHAR(100),[m
+[31m-  descripcion TEXT,[m
+[31m-  poster VARCHAR(255),[m
+[31m-  codigo_hash VARCHAR(64) UNIQUE[m
+[31m-);[m
+[31m-CREATE TABLE resenas ([m
+[31m-  id INT AUTO_INCREMENT PRIMARY KEY,[m
+[31m-  usuario_id INT NOT NULL,[m
+[31m-  pelicula_id INT NOT NULL,[m
+[31m-  texto TEXT NOT NULL,[m
+[31m-  calificacion INT CHECK (calificacion BETWEEN 1 AND 5),[m
+[31m-  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,[m
+[31m-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),[m
+[31m-  FOREIGN KEY (pelicula_id) REFERENCES peliculas(id)[m
+[31m-);[m
+[31m-INSERT INTO peliculas (titulo, anio, director, genero, descripcion, poster, codigo_hash)[m
+[31m-VALUES[m
+[31m-('Inception', 2010, 'Christopher Nolan', 'Acción, Ciencia ficción', 'Un ladrón roba secretos del subconsciente durante los sueños.', 'https://via.placeholder.com/96x144?text=Inception', 'hash_inception2010'),[m
+[31m-('Spirited Away', 2001, 'Hayao Miyazaki', 'Animación, Fantasía', 'Una niña queda atrapada en un mundo mágico y debe volver a casa.', 'https://via.placeholder.com/96x144?text=Spirited+Away', 'hash_spiritedaway2001');[m
+[31m-[m
+[31m-use uan_db;[m
+[31m-DELETE FROM peliculas;[m
+[31m-SELECT * FROM peliculas;[m
+[31m-UPDATE peliculas[m
+[31m-SET poster = NULL;[m
+[31m-SET SQL_SAFE_UPDATES = 0;[m
+[31m-[m
+[31m-DELETE FROM peliculas;[m
+[31m-INSERT INTO peliculas (id, titulo, anio, director, elenco, genero, descripcion, poster, codigo_hash)[m
+[31m-VALUES[m
+[31m-(1, 'Inception', '2010', 'Christopher Nolan', 'Leonardo DiCaprio, Joseph Gordon-Levitt', 'Acción, Ciencia ficción', 'Un ladrón roba secretos del subconsciente durante los sueños.', NULL, 'hash_inception2010'),[m
+[31m-(2, 'Spirited Away', '2001', 'Hayao Miyazaki', 'Rumi Hiiragi, Miyu Irino', 'Animación, Fantasía', 'Chihiro queda atrapada en un mundo mágico y debe salvar a sus padres.', NULL, 'hash_spiritedaway2001'),[m
+[31m-(3, 'The Legend of Zelda', '2025', 'A. Example', 'Actor 1, Actor 2', 'Aventura, Fantasía', 'Un joven héroe debe explorar reinos y enfrentarse a fuerzas oscuras para salvar a la princesa.', NULL, 'ZELDA123'),[m
+[31m-(4, 'Parasite', '2019', 'Bong Joon-ho', 'Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong', 'Drama, Thriller', 'Una familia pobre se infiltra en una familia rica con consecuencias inesperadas.', NULL, 'PARA2019'),[m
+[31m-(5, 'Interstellar', '2014', 'Christopher Nolan', 'Matthew McConaughey, Anne Hathaway', 'Ciencia ficción, Aventura', 'Un grupo de astronautas viaja a través de un agujero de gusano en busca de un nuevo hogar para la humanidad.', NULL, 'INTER2014'),[m
+[31m-(6, 'Your Name', '2016', 'Makoto Shinkai', 'Ryunosuke Kamiki, Mone Kamishiraishi', 'Animación, Romance', 'Dos adolescentes intercambian cuerpos misteriosamente y deben encontrarse antes de que sea demasiado tarde.', NULL, 'YOUR2016'),[m
+[31m-(7, 'The Matrix', '1999', 'Lana Wachowski, Lilly Wachowski', 'Keanu Reeves, Laurence Fishburne', 'Acción, Ciencia ficción', 'Un hacker descubre que la realidad es una simulación controlada por máquinas.', NULL, 'MATRIX1999');[m
+[31m-[m
+[31m-DELETE FROM resenas;[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-DELETE FROM resenas;[m
+[31m-DELETE FROM peliculas;[m
+[31m-[m
+[31m-DELETE FROM resenas;[m
+[31m-DELETE FROM peliculas;[m
+[31m-[m
+[31m-INSERT INTO peliculas (id, titulo, anio, director, elenco, genero, descripcion, poster, codigo_hash)[m
+[31m-VALUES[m
+[31m-(1, 'Inception', '2010', 'Christopher Nolan', 'Leonardo DiCaprio, Joseph Gordon-Levitt', 'Acción, Ciencia ficción', 'Un ladrón roba secretos del subconsciente durante los sueños.', 'https://pics.filmaffinity.com/inception_the_cobol_job-606496025-mmed.jpg', 'hash_inception2010'),[m
+[31m-(2, 'Spirited Away', '2001', 'Hayao Miyazaki', 'Rumi Hiiragi, Miyu Irino', 'Animación, Fantasía', 'Chihiro queda atrapada en un mundo mágico y debe salvar a sus padres.', 'https://pics.filmaffinity.com/koe_no_katachi_a_silent_voice-681738753-mmed.jpg', 'hash_spiritedaway2001'),[m
+[31m-(3, 'The Legend of Zelda', '2025', 'A. Example', 'Actor 1, Actor 2', 'Aventura, Fantasía', 'Un joven héroe debe explorar reinos y enfrentarse a fuerzas oscuras para salvar a la princesa.', 'https://pics.filmaffinity.com/yasha_legends_of_the_demon_blade-463380855-mmed.jpg', 'ZELDA123'),[m
+[31m-(4, 'Parasite', '2019', 'Bong Joon-ho', 'Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong', 'Drama, Thriller', 'Una familia pobre se infiltra en una familia rica con consecuencias inesperadas.', 'https://pics.filmaffinity.com/gisaengchung-432616131-mmed.jpg', 'PARA2019'),[m
+[31m-(5, 'Interstellar', '2014', 'Christopher Nolan', 'Matthew McConaughey, Anne Hathaway', 'Ciencia ficción, Aventura', 'Un grupo de astronautas viaja a través de un agujero de gusano en busca de un nuevo hogar para la humanidad.', 'https://pics.filmaffinity.com/the_exterminator-135496060-mmed.jpg', 'INTER2014'),[m
+[31m-(6, 'Your Name', '2016', 'Makoto Shinkai', 'Ryunosuke Kamiki, Mone Kamishiraishi', 'Animación, Romance', 'Dos adolescentes intercambian cuerpos misteriosamente y deben encontrarse antes de que sea demasiado tarde.', 'https://pics.filmaffinity.com/kimi_no_na_wa_your_name-612760352-mmed.jpg', 'YOUR2016'),[m
+[31m-(7, 'The Matrix', '1999', 'Lana Wachowski, Lilly Wachowski', 'Keanu Reeves, Laurence Fishburne', 'Acción, Ciencia ficción', 'Un hacker descubre que la realidad es una simulación controlada por máquinas.', 'https://pics.filmaffinity.com/the_matrix-155050517-mmed.jpg', 'MATRIX1999');[m
+\ No newline at end of file[m
+[1mdiff --git a/.vscode/launch.json b/Frontend/.vscode/launch.json[m
+[1msimilarity index 100%[m
+[1mrename from .vscode/launch.json[m
+[1mrename to Frontend/.vscode/launch.json[m
+[1mdiff --git a/Frontend/add-item.html b/Frontend/add-item.html[m
+[1mindex 8c1f797..7a362b8 100644[m
+[1m--- a/Frontend/add-item.html[m
+[1m+++ b/Frontend/add-item.html[m
+[36m@@ -1,18 +1,32 @@[m
+ <!DOCTYPE html>[m
+ <html lang="es">[m
+ <head>[m
+[31m-  <meta charset="UTF-8" />[m
+[31m-  <meta name="viewport" content="width=device-width,initial-scale=1" />[m
+[31m-  <title>Agregar Película - GameRate</title>[m
+[31m-  <link rel="stylesheet" href="styles.css" />[m
+[32m+[m[32m  <meta charset="UTF-8">[m
+[32m+[m[32m  <title>Agregar Película - UANFilms</title>[m
+[32m+[m[32m  <meta name="viewport" content="width=device-width,initial-scale=1">[m
+[32m+[m[32m  <style>[m
+[32m+[m[32m    body { font-family: Arial, sans-serif; margin: 0; padding: 0 1rem; background:#f5f5f5; color:#222; }[m
+[32m+[m[32m    header { display:flex; align-items:center; justify-content:space-between; padding:1rem 0; }[m
+[32m+[m[32m    nav a { margin-left:0.5rem; text-decoration:none; color:#0366d6; font-weight:600; }[m
+[32m+[m[32m    nav a.active { text-decoration:underline; }[m
+[32m+[m[32m    main { max-width:700px; margin:0 auto; background:white; padding:1.5rem; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); }[m
+[32m+[m[32m    h1, h2 { margin-top:0; }[m
+[32m+[m[32m    form { display:flex; flex-direction:column; ga

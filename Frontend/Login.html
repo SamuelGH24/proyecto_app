@@ -16,13 +16,13 @@
       max-width: 420px;
       margin: 2rem auto;
       background: #fff;
-      padding: 1.25rem;
+      padding: 1.5rem;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.06);
     }
     label {
       display: block;
-      margin: .5rem 0 .25rem;
+      margin: .75rem 0 .25rem;
       font-weight: 600;
     }
     input {
@@ -30,33 +30,74 @@
       padding: .6rem;
       border: 1px solid #ccc;
       border-radius: 6px;
+      box-sizing: border-box;
     }
     button {
-      margin-top: .75rem;
-      width: 100%;
+      margin-top: 1rem;
       padding: .6rem;
       border-radius: 6px;
       border: none;
       background: #0366d6;
       color: #fff;
       cursor: pointer;
+      width: 100%;
     }
-    button.secondary {
-      background: #6c757d;
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
     .error {
       color: #c00;
       margin-top: .5rem;
       font-size: .9rem;
+      padding: .5rem;
+      background: #fee;
+      border-radius: 4px;
+      border: 1px solid #fcc;
     }
     .success {
-      color: green;
+      color: #0a6e0a;
       margin-top: .5rem;
       font-size: .9rem;
+      padding: .5rem;
+      background: #e8f5e8;
+      border-radius: 4px;
+      border: 1px solid #b8e6b8;
+    }
+    .warning {
+      color: #856404;
+      margin-top: .5rem;
+      font-size: .9rem;
+      padding: .75rem;
+      background: #fff3cd;
+      border-radius: 4px;
+      border: 1px solid #ffeaa7;
+    }
+    .warning strong {
+      display: block;
+      margin-bottom: .5rem;
+    }
+    .warning button {
+      margin-top: .5rem;
+      background: #856404;
+      font-size: .85rem;
+      padding: .4rem .6rem;
     }
     footer {
-      margin-top: .75rem;
+      margin-top: 1rem;
       text-align: center;
+      font-size: .9rem;
+    }
+    .hidden {
+      display: none;
+    }
+    .info-box {
+      background: #e6f2ff;
+      border: 1px solid #b3d9ff;
+      color: #0366d6;
+      padding: .75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
       font-size: .9rem;
     }
   </style>
@@ -64,25 +105,29 @@
 
 <body>
   <header>
-    <h1 style="margin:0; text-align:center;">Iniciar Sesión</h1>
+    <h1 style="margin:0; text-align:center;">Iniciar Sesión - UANFilms</h1>
   </header>
 
   <main>
+    <!-- Mensaje informativo si viene de registro -->
+    <div id="registeredInfo" class="info-box hidden">
+      ✅ <strong>Registro completado.</strong> Por favor verifica tu correo antes de iniciar sesión.
+    </div>
+
     <form id="loginForm" novalidate>
       <label for="email">Correo</label>
-      <input id="email" name="email" type="email" required autocomplete="username" placeholder="tu@correo.com">
+      <input id="email" name="email" type="email" required placeholder="tu@correo.com">
 
       <label for="password">Contraseña</label>
-      <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+      <input id="password" name="password" type="password" required placeholder="Tu contraseña">
 
-      <div id="loginMsg" class="error" aria-live="polite"></div>
+      <div id="msg" class="hidden" aria-live="polite"></div>
 
-      <button type="submit">Entrar</button>
-      <button type="button" id="demoBtn" class="secondary">Entrar como demo</button>
+      <button type="submit" id="submitBtn">Iniciar Sesión</button>
     </form>
 
-    <p style="margin-top:.75rem; text-align:center;">
-      ¿No tienes cuenta? <a href="Resgistrer.html">Regístrate</a>
+    <p style="margin-top:1rem; text-align:center;">
+      ¿No tienes cuenta? <a href="Resgistrer.html">Regístrate aquí</a>
     </p>
   </main>
 
@@ -91,86 +136,154 @@
   </footer>
 
   <script>
-    const form = document.getElementById('loginForm');
-    const msg = document.getElementById('loginMsg');
-    const demoBtn = document.getElementById('demoBtn');
+    (function(){
+      const form = document.getElementById('loginForm');
+      const msg = document.getElementById('msg');
+      const submitBtn = document.getElementById('submitBtn');
+      const emailInput = document.getElementById('email');
+      const registeredInfo = document.getElementById('registeredInfo');
 
-    function showError(text){ msg.className='error'; msg.textContent = text; }
-    function showSuccess(text){ msg.className='success'; msg.textContent = text; }
-
-    // Si el usuario ya inició sesión → evitar reingresar
-    (function checkSession(){
-      const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
-      if(user && user.email){
-        window.location.href = 'perfil.html';
+      function showError(text){ 
+        msg.className='error'; 
+        msg.textContent = text; 
+        msg.classList.remove('hidden');
       }
-    })();
-
-    // Rellenar correo si viene de ?email=
-    (function prefill(){
-      const params = new URLSearchParams(location.search);
-      const e = params.get('email');
-      if(e) document.getElementById('email').value = e;
-    })();
-
-    // Envío del formulario
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      msg.textContent = '';
-
-      const email = (document.getElementById('email').value || '').trim();
-      const password = (document.getElementById('password').value || '').trim();
-
-      if(!email || !password){
-        showError('Introduce correo y contraseña.');
-        return;
+      
+      function showSuccess(text){ 
+        msg.className='success'; 
+        msg.textContent = text; 
+        msg.classList.remove('hidden');
       }
 
-      try {
-        const res = await fetch('http://localhost:3000/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
+      function showWarning(html){
+        msg.className='warning';
+        msg.innerHTML = html;
+        msg.classList.remove('hidden');
+      }
 
-        const data = await res.json();
+      // Verificar si viene de registro exitoso
+      (function checkRegistered(){
+        const params = new URLSearchParams(location.search);
+        const registered = params.get('registered');
+        const email = params.get('email');
+        
+        if(registered === '1'){
+          registeredInfo.classList.remove('hidden');
+        }
+        
+        if(email) {
+          emailInput.value = email;
+        }
+      })();
 
-        if(!res.ok){
-          showError(data.error || 'Error al iniciar sesión.');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.classList.add('hidden');
+        msg.textContent = '';
+
+        const email = (emailInput.value||'').trim().toLowerCase();
+        const password = (document.getElementById('password').value||'');
+
+        if(!email || !password){
+          showError('⚠️ Completa todos los campos.');
           return;
         }
 
-        // Guardar datos de sesión
-        localStorage.setItem('uanfilmsUser', JSON.stringify({
-          id: data.id,
-          nombre: data.nombre,
-          email: data.email,
-          loggedAt: Date.now()
-        }));
+        const emailRe = /^\S+@\S+\.\S+$/;
+        if(!emailRe.test(email)){
+          showError('⚠️ Correo inválido.');
+          return;
+        }
 
-        showSuccess('Inicio de sesión exitoso. Redirigiendo...');
-        setTimeout(() => {
-          // Redirigir a perfil o al "next" si se especificó
-          const params = new URLSearchParams(location.search);
-          const next = params.get('next') || 'perfil.html';
-          window.location.href = next;
-        }, 800);
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Iniciando sesión...';
 
-      } catch (err) {
-        showError('No se pudo conectar con el servidor.');
+        try {
+          const res = await fetch('http://172.177.1.151:3000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            // Caso especial: email no verificado
+            if(data.email_no_verificado){
+              showWarning(`
+                <strong>⚠️ Correo no verificado</strong>
+                <p style="margin:.5rem 0;">Debes verificar tu correo electrónico antes de iniciar sesión.</p>
+                <p style="margin:.5rem 0; font-size:.85rem;">Revisa tu bandeja de entrada (y spam) de <strong>${email}</strong></p>
+                <button id="resendBtn">📧 Reenviar correo de verificación</button>
+              `);
+
+              // Botón para reenviar verificación
+              document.getElementById('resendBtn').onclick = async () => {
+                await reenviarVerificacion(email);
+              };
+            } else {
+              showError(data.error || 'Error al iniciar sesión.');
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Iniciar Sesión';
+            return;
+          }
+
+          // Éxito - guardar sesión
+          showSuccess('✅ Inicio de sesión exitoso. Redirigiendo...');
+          localStorage.setItem('uanfilmsUser', JSON.stringify(data));
+
+          setTimeout(() => {
+            const params = new URLSearchParams(location.search);
+            const next = params.get('next');
+            window.location.href = next || 'index.html';
+          }, 1000);
+
+        } catch (err) {
+          showError('❌ No se pudo conectar con el servidor.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Iniciar Sesión';
+          console.error('Error:', err);
+        }
+      });
+
+      // Función para reenviar verificación
+      async function reenviarVerificacion(email) {
+        const resendBtn = document.getElementById('resendBtn');
+        resendBtn.disabled = true;
+        resendBtn.textContent = 'Enviando...';
+
+        try {
+          const res = await fetch('http://172.177.1.151:3000/api/reenviar-verificacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+
+          const data = await res.json();
+
+          if(res.ok){
+            showSuccess('✅ ' + data.message);
+          } else {
+            showError('❌ ' + (data.error || 'Error al reenviar el correo.'));
+          }
+        } catch (err) {
+          showError('❌ No se pudo conectar con el servidor.');
+          console.error('Error:', err);
+        } finally {
+          resendBtn.disabled = false;
+          resendBtn.textContent = '📧 Reenviar correo de verificación';
+        }
       }
-    });
 
-    // Entrar como demo
-    demoBtn.addEventListener('click', () => {
-      localStorage.setItem('uanfilmsUser', JSON.stringify({
-        email: 'demo@uanfilms.local',
-        nombre: 'Usuario Demo',
-        loggedAt: Date.now(),
-        demo: true
-      }));
-      window.location.href = 'perfil.html';
-    });
+      // Rellenar correo si viene en query
+      (function prefill(){
+        const params = new URLSearchParams(location.search);
+        const e = params.get('email');
+        if(e) emailInput.value = e;
+      })();
+    })();
   </script>
 </body>
 </html>

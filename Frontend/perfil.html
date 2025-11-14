@@ -31,19 +31,17 @@
       font-weight: 600;
     }
     main {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: calc(100vh - 100px);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
     }
     .profile-card {
       background: white;
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      width: 350px;
+      margin-bottom: 2rem;
       text-align: center;
-      position: relative;
     }
     .profile-card h2 {
       color: #0366d6;
@@ -62,6 +60,116 @@
       display: inline-block;
       margin-bottom: 0.8rem;
     }
+    
+    /* === ESTILOS PARA FOTO DE PERFIL === */
+    .foto-perfil-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 1.5rem;
+    }
+    .foto-perfil {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #0366d6;
+      background: #e8f4fd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      color: #0366d6;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .foto-perfil img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .cambiar-foto-btn {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: #0366d6;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+    .cambiar-foto-btn:hover {
+      transform: scale(1.1);
+      background: #0256c7;
+    }
+    #inputFoto {
+      display: none;
+    }
+    
+    /* Modal para vista previa */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    .preview-foto {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 1rem auto;
+      border: 4px solid #0366d6;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .modal-buttons button {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-guardar {
+      background: #0366d6;
+      color: white;
+    }
+    .btn-cancelar {
+      background: #6c757d;
+      color: white;
+    }
+    .mensaje-carga {
+      color: #0366d6;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+    
     .logout-btn {
       background: #d33;
       color: white;
@@ -74,6 +182,117 @@
     }
     .logout-btn:hover {
       background: #b22;
+    }
+    .ver-mas-tarde {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .ver-mas-tarde h3 {
+      color: #0366d6;
+      margin: 0 0 1.5rem 0;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    #listaPeliculas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+    .pelicula-card {
+      display: flex;
+      gap: 1rem;
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    .pelicula-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .pelicula-poster {
+      width: 140px;
+      height: 210px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .pelicula-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .pelicula-info h4 {
+      margin: 0 0 0.5rem 0;
+      color: #222;
+      font-size: 1.25rem;
+    }
+    .pelicula-meta {
+      background: #e8f4fd;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #0366d6;
+    }
+    .pelicula-director {
+      background: #f0f0f0;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .pelicula-info p {
+      margin: 0 0 1rem 0;
+      color: #666;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      flex: 1;
+    }
+    .pelicula-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      flex: 1;
+      background: #0366d6;
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover {
+      background: #0256c7;
+    }
+    .btn-danger {
+      flex: 1;
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-danger:hover {
+      background: #5a6268;
+    }
+    .empty-message {
+      text-align: center;
+      padding: 3rem;
+      color: #666;
     }
   </style>
 </head>
@@ -91,21 +310,56 @@
     <div class="profile-card" id="profileCard">
       <p>Cargando datos del usuario...</p>
     </div>
+
+    <div class="ver-mas-tarde" id="verMasTarde">
+      <h3>📺 Lista "Ver más tarde"</h3>
+      <div id="listaPeliculas">
+        <p class="empty-message">Cargando lista...</p>
+      </div>
+    </div>
   </main>
 
+  <!-- Modal para cambiar foto -->
+  <div class="modal" id="modalFoto">
+    <div class="modal-content">
+      <h3>Cambiar foto de perfil</h3>
+      <img id="previewFoto" class="preview-foto" src="" alt="Vista previa">
+      <p id="mensajeCarga" class="mensaje-carga" style="display:none;"></p>
+      <div class="modal-buttons">
+        <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-guardar" onclick="guardarFoto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // === CARGAR DATOS DEL USUARIO ===
     const user = JSON.parse(localStorage.getItem('uanfilmsUser'));
     const card = document.getElementById('profileCard');
+    const lista = document.getElementById('listaPeliculas');
+    let imagenSeleccionada = null;
 
     if (!user) {
       card.innerHTML = `
         <p style="color:red;">No has iniciado sesión.</p>
         <button onclick="window.location.href='Login.html'" style="background:#0366d6;color:white;border:none;padding:.5rem 1rem;border-radius:8px;cursor:pointer;">Ir a iniciar sesión</button>
       `;
+      document.getElementById('verMasTarde').style.display = "none";
     } else {
-      // Mostrar carné del usuario
+      // Mostrar foto de perfil o icono por defecto
+      const fotoHTML = user.foto_perfil 
+        ? `<img src="${user.foto_perfil}" alt="Foto de perfil">`
+        : '👤';
+
       card.innerHTML = `
+        <div class="foto-perfil-container">
+          <div class="foto-perfil" id="fotoPerfil">
+            ${fotoHTML}
+          </div>
+          <button class="cambiar-foto-btn" onclick="document.getElementById('inputFoto').click()" title="Cambiar foto">
+            📷
+          </button>
+          <input type="file" id="inputFoto" accept="image/*">
+        </div>
         <div class="id">ID: ${user.id}</div>
         <h2>${user.nombre}</h2>
         <p><strong>Email:</strong> ${user.email}</p>
@@ -116,6 +370,171 @@
       document.getElementById('logoutBtn').addEventListener('click', () => {
         localStorage.removeItem('uanfilmsUser');
         window.location.href = 'index.html';
+      });
+
+      // === CAMBIAR FOTO DE PERFIL ===
+      document.getElementById('inputFoto').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona una imagen válida (JPG, PNG, etc.)');
+          return;
+        }
+
+        // Validar tamaño (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('La imagen es muy grande. El tamaño máximo es 5MB.');
+          return;
+        }
+
+        // Convertir a Base64
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          imagenSeleccionada = event.target.result;
+          document.getElementById('previewFoto').src = imagenSeleccionada;
+          document.getElementById('modalFoto').classList.add('active');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // === CARGAR LISTA "VER MÁS TARDE" ===
+      fetch(`http://172.177.1.151:3000/api/ver-mas-tarde/${user.id}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (!data || data.length === 0) {
+            lista.innerHTML = `<p class="empty-message">No tienes películas guardadas.</p>`;
+            return;
+          }
+
+          lista.innerHTML = "";
+          data.forEach(p => {
+            const card = document.createElement("div");
+            card.className = "pelicula-card";
+            
+            const poster = p.poster || 'https://via.placeholder.com/140x210?text=Sin+Imagen';
+            
+            card.innerHTML = `
+              <div class="pelicula-poster" style="background-image: url('${poster}')"></div>
+              <div class="pelicula-info">
+                <h4>${p.titulo} (${p.anio || ''})</h4>
+                <div class="pelicula-meta">
+                  Género: ${p.genero || 'No especificado'}
+                </div>
+                <div class="pelicula-director">
+                  Director: ${p.director || 'No especificado'}
+                </div>
+                <p>${p.descripcion || 'Sin descripción disponible.'}</p>
+                <div class="pelicula-actions">
+                  <button class="btn-primary" onclick="irOpiniones(${p.pelicula_id})">
+                    Ir a opiniones
+                  </button>
+                  <button class="btn-danger" onclick="eliminar(${p.id})">
+                    quitar de la lista
+                  </button>
+                </div>
+              </div>
+            `;
+            lista.appendChild(card);
+          });
+        })
+        .catch(err => {
+          lista.innerHTML = `<p class="empty-message" style="color:red;">Error al cargar la lista: ${err.message}</p>`;
+        });
+    }
+
+    // === FUNCIONES DEL MODAL ===
+    function cerrarModal() {
+      document.getElementById('modalFoto').classList.remove('active');
+      imagenSeleccionada = null;
+      document.getElementById('inputFoto').value = '';
+    }
+
+    async function guardarFoto() {
+      if (!imagenSeleccionada) {
+        alert('No hay imagen seleccionada');
+        return;
+      }
+
+      const mensajeCarga = document.getElementById('mensajeCarga');
+      mensajeCarga.textContent = 'Guardando foto...';
+      mensajeCarga.style.display = 'block';
+
+      try {
+        const response = await fetch(`http://172.177.1.151:3000/api/usuarios/${user.id}/foto`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            foto_perfil: imagenSeleccionada
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Error al guardar la foto');
+        }
+
+        // Actualizar localStorage
+        user.foto_perfil = imagenSeleccionada;
+        localStorage.setItem('uanfilmsUser', JSON.stringify(user));
+
+        mensajeCarga.textContent = '¡Foto actualizada! Recargando...';
+        
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+
+      } catch (error) {
+        mensajeCarga.style.color = 'red';
+        mensajeCarga.textContent = 'Error: ' + error.message;
+        console.error('Error:', error);
+      }
+    }
+
+    // === IR A OPINIONES ===
+    function irOpiniones(peliculaId) {
+      window.location.href = `opiniones.html?pelicula=${peliculaId}`;
+    }
+
+    // === ELIMINAR DE "VER MÁS TARDE" ===
+    function eliminar(relacionId) {
+      if (!relacionId) {
+        alert('Error: ID no válido');
+        return;
+      }
+
+      if (!confirm('¿Seguro que quieres eliminar esta película de tu lista?')) {
+        return;
+      }
+
+      fetch(`http://172.177.1.151:3000/api/ver-mas-tarde/${relacionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log('Eliminado:', data);
+        location.reload();
+      })
+      .catch(err => {
+        alert('Error al eliminar: ' + err.message);
+        console.error(err);
       });
     }
   </script>
