@@ -199,7 +199,7 @@
         submitBtn.textContent = 'Iniciando sesión...';
 
         try {
-          const res = await fetch('http://localhost:3000/api/login', {
+          const res = await fetch('http://172.177.1.151:3000/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -255,7 +255,7 @@
         resendBtn.textContent = 'Enviando...';
 
         try {
-          const res = await fetch('http://localhost:3000/api/reenviar-verificacion', {
+          const res = await fetch('http://172.177.1.151:3000/api/reenviar-verificacion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })

@@ -91,7 +91,7 @@
       try {
         const codigo_hash = await generarHash(`${titulo}${anio}${director}`);
 
-        const res = await fetch('http://localhost:3000/api/peliculas', {
+        const res = await fetch('http://172.177.1.151:3000/api/peliculas', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -144,7 +144,7 @@
 
       async function verificarEmail(token) {
         try {
-          const res = await fetch(`http://localhost:3000/api/verificar-email?token=${encodeURIComponent(token)}`);
+          const res = await fetch(`http://172.177.1.151:3000/api/verificar-email?token=${encodeURIComponent(token)}`);
           const data = await res.json();
 
           if(res.ok){

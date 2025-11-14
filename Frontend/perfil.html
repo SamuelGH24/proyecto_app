@@ -400,7 +400,7 @@
       });
 
       // === CARGAR LISTA "VER MÁS TARDE" ===
-      fetch(`http://localhost:3000/api/ver-mas-tarde/${user.id}`)
+      fetch(`http://172.177.1.151:3000/api/ver-mas-tarde/${user.id}`)
         .then(res => {
           if (!res.ok) {
             throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -467,7 +467,7 @@
       mensajeCarga.style.display = 'block';
 
       try {
-        const response = await fetch(`http://localhost:3000/api/usuarios/${user.id}/foto`, {
+        const response = await fetch(`http://172.177.1.151:3000/api/usuarios/${user.id}/foto`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -516,7 +516,7 @@
         return;
       }
 
-      fetch(`http://localhost:3000/api/ver-mas-tarde/${relacionId}`, {
+      fetch(`http://172.177.1.151:3000/api/ver-mas-tarde/${relacionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'

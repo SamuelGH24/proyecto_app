@@ -79,7 +79,7 @@
     // === CARGAR PELÍCULAS DESDE MYSQL ===
     async function cargarPeliculas() {
       try {
-        const res = await fetch('http://localhost:3000/api/peliculas');
+        const res = await fetch('http://172.177.1.151:3000/api/peliculas');
         if (!res.ok) throw new Error('Error al conectar con el servidor');
         peliculas = await res.json();
         renderPeliculas();
@@ -211,7 +211,7 @@
           const peliculaId = Number(card.dataset.id);
 
           try {
-            const res = await fetch('http://localhost:3000/api/ver-mas-tarde', {
+            const res = await fetch('http://172.177.1.151:3000/api/ver-mas-tarde', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ usuario_id: user.id, pelicula_id: peliculaId })

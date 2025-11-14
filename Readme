@@ -1,34 +1,664 @@
-# 🎬 Proyecto UANFilms
+# 🎬 UANFilms - Plataforma de Reseñas de Películas
 
-**Electiva III – Computación en la Nube**  
-Avance 1 - 2023-1  
-Universidad Antonio Nariño
+http://172.177.1.151:3000
+
+## 📋 Descripción del Proyecto
+
+UANFilms es una aplicación web de reseñas de películas desplegada completamente en **Microsoft Azure**. Los usuarios pueden registrarse, explorar un catálogo de películas, escribir reseñas, calificar películas y gestionar una lista personal de "Ver más tarde".
+
+### ✨ Características Principales
+
+- **Gestión de usuarios**: Registro con verificación de email, inicio de sesión y perfil personalizado
+- **Catálogo de películas**: Búsqueda, filtrado y visualización de películas con pósters
+- **Sistema de reseñas**: Los usuarios pueden opinar y calificar películas (1-5 estrellas)
+- **Procesamiento automático**: Azure Function procesa reseñas y las almacena en Blob Storage
+- **Lista personalizada**: Cada usuario puede guardar películas para ver más tarde
+- **Fotos de perfil**: Los usuarios pueden subir y actualizar su foto de perfil
 
 ---
 
-## 📖 Descripción general
+## 🏗️ Arquitectura del Sistema
 
-Este proyecto implementa un sistema web tipo **3 capas (3-tier)** que permite:
-- Registro e inicio de sesión de usuarios  
-- Visualización de películas con detalles  
-- Adición de nuevas películas  
-- Creación y listado de reseñas y calificaciones  
+### Diagrama de Arquitectura
 
-El sistema está desarrollado en **Node.js**, usa **MySQL** como base de datos relacional y se comunica mediante **API REST** entre el frontend y el backend.
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      INTERNET (Usuarios)                     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           │ HTTP (Puerto 3000)
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Azure Virtual Machine (B1s)                      │
+│  IP: 172.177.1.151:3000                                      │
+│  ┌────────────────────┐  ┌────────────────────┐             │
+│  │   Frontend (HTML)  │  │  Backend (Node.js) │             │
+│  │   - index.html     │  │  - Express.js      │             │
+│  │   - styles.css     │  │  - REST API        │             │
+│  │   - JS vanilla     │  │  - Puerto 3000     │             │
+│  └────────────────────┘  └────────────────────┘             │
+└──────────────────┬───────────────────┬───────────────────────┘
+                   │                   │
+                   │                   │ MySQL Protocol (3306)
+                   │                   ▼
+                   │   ┌────────────────────────────────────┐
+                   │   │  Azure MySQL Flexible Server       │
+                   │   │  Host: uanfilmsdb.mysql...         │
+                   │   │  User: azureuser                   │
+                   │   │  Database: uan_db                  │
+                   │   │  🔒 Solo acceso desde VM           │
+                   │   └────────────────────────────────────┘
+                   │
+                   │ HTTPS
+                   ▼
+   ┌────────────────────────────────────────┐
+   │    Azure Function (Consumption Plan)   │
+   │    URL: uanfilmsfunction.azure...      │
+   │    Trigger: HTTP POST                  │
+   │    - Procesa reseñas                   │
+   │    - Convierte a minúsculas            │
+   │    - Guarda en Blob Storage            │
+   └─────────────────┬──────────────────────┘
+                     │
+                     │ SDK Storage
+                     ▼
+     ┌────────────────────────────────────┐
+     │   Azure Blob Storage               │
+     │   Account: uanfilmsstorage         │
+     │   Container: resenas-procesadas    │
+     │   - Archivos .txt de reseñas       │
+     └────────────────────────────────────┘
+```
+
+### Modelo de Capas (3-Tier + Batch)
+
+1. **Capa de Presentación (Frontend)**: HTML5, CSS3, JavaScript vanilla
+2. **Capa de Lógica (Backend)**: Node.js + Express.js + REST API
+3. **Capa de Datos**: MySQL Flexible Server
+4. **Capa de Procesamiento (Batch)**: Azure Function (serverless)
 
 ---
 
-## ⚙️ Estructura del proyecto
+## 🔧 Servicios de Azure Utilizados
 
-### 🧠 Pasos para ejecución
+| Servicio | Propósito | Configuración |
+|----------|-----------|---------------|
+| **Virtual Machine** | Hosting Frontend + Backend | B1s (1 vCPU, 1 GB RAM) |
+| **MySQL Flexible Server** | Base de datos relacional | Burstable tier, Puerto 3306 cerrado al público |
+| **Blob Storage** | Almacenamiento de reseñas procesadas | Container: `resenas-procesadas` |
+| **Azure Function** | Procesamiento serverless de reseñas | Consumption Plan, Trigger HTTP |
+| **Network Security Group** | Firewall y aislamiento de red | Bloquea acceso directo a MySQL |
 
-1. **Importar la base de datos:**
-   - Abrir MySQL Workbench.
-   - Crear un esquema llamado `uan_db`.
-   - Importar el archivo `Database/uan_db.sql`.
+---
 
-DB_HOST=127.0.0.1
-DB_USER=root
-DB_PASSWORD=2424
+## 🗄️ Estructura de la Base de Datos
+
+### Tabla: `usuarios`
+```sql
+CREATE TABLE usuarios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  foto_perfil LONGTEXT,
+  email_verificado BOOLEAN DEFAULT FALSE,
+  token_verificacion VARCHAR(64),
+  token_expiracion DATETIME,
+  fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Tabla: `peliculas`
+```sql
+CREATE TABLE peliculas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  titulo VARCHAR(255) NOT NULL,
+  anio INT NOT NULL,
+  director VARCHAR(255) NOT NULL,
+  elenco TEXT,
+  genero VARCHAR(100) NOT NULL,
+  descripcion TEXT,
+  poster TEXT,
+  codigo_hash VARCHAR(64),
+  fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Tabla: `resenas`
+```sql
+CREATE TABLE resenas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  pelicula_id INT NOT NULL,
+  texto TEXT NOT NULL,
+  calificacion INT CHECK (calificacion BETWEEN 1 AND 5),
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (pelicula_id) REFERENCES peliculas(id)
+);
+```
+
+### Tabla: `ver_mas_tarde`
+```sql
+CREATE TABLE ver_mas_tarde (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_id INT NOT NULL,
+  pelicula_id INT NOT NULL,
+  fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  FOREIGN KEY (pelicula_id) REFERENCES peliculas(id)
+);
+```
+
+---
+
+## 🚀 Endpoints de la API
+
+### Autenticación
+
+#### **POST** `/api/register`
+Registra un nuevo usuario y envía email de verificación.
+
+**Body:**
+```json
+{
+  "nombre": "Juan Pérez",
+  "email": "juan@example.com",
+  "password": "password123"
+}
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "message": "Usuario registrado. Revisa tu correo para verificar tu cuenta.",
+  "id": 1,
+  "email_enviado": true
+}
+```
+
+#### **POST** `/api/login`
+Inicia sesión de usuario verificado.
+
+**Body:**
+```json
+{
+  "email": "juan@example.com",
+  "password": "password123"
+}
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "id": 1,
+  "nombre": "Juan Pérez",
+  "email": "juan@example.com",
+  "foto_perfil": "data:image/jpeg;base64,..."
+}
+```
+
+#### **GET** `/api/verificar-email?token={token}`
+Verifica el email del usuario mediante token.
+
+---
+
+### Películas
+
+#### **GET** `/api/peliculas`
+Obtiene el catálogo completo de películas.
+
+**Respuesta:**
+```json
+[
+  {
+    "id": 1,
+    "titulo": "Inception",
+    "anio": 2010,
+    "director": "Christopher Nolan",
+    "elenco": "Leonardo DiCaprio, Tom Hardy",
+    "genero": "Ciencia Ficción",
+    "descripcion": "Un ladrón que roba secretos corporativos...",
+    "poster": "https://...",
+    "codigo_hash": "abc123"
+  }
+]
+```
+
+#### **POST** `/api/peliculas`
+Agrega una nueva película al catálogo.
+
+**Body:**
+```json
+{
+  "titulo": "The Matrix",
+  "anio": 1999,
+  "director": "Wachowski Sisters",
+  "elenco": "Keanu Reeves, Laurence Fishburne",
+  "genero": "Ciencia Ficción",
+  "descripcion": "Un hacker descubre la verdad sobre su realidad",
+  "poster": "https://...",
+  "codigo_hash": "xyz789"
+}
+```
+
+---
+
+### Reseñas
+
+#### **GET** `/api/resenas/:peliculaId`
+Obtiene todas las reseñas de una película específica.
+
+#### **POST** `/api/resenas`
+Crea una nueva reseña y dispara Azure Function para procesamiento.
+
+**Body:**
+```json
+{
+  "usuario_id": 1,
+  "pelicula_id": 1,
+  "texto": "Excelente película con un guion innovador",
+  "calificacion": 5
+}
+```
+
+**Proceso automático:**
+1. Guarda reseña en MySQL
+2. Llama a Azure Function con los datos
+3. Function procesa el texto (minúsculas) y guarda archivo `.txt` en Blob Storage
+
+#### **GET** `/api/resenas/usuario/:usuarioId`
+Obtiene todas las reseñas de un usuario.
+
+---
+
+### Lista Personal
+
+#### **POST** `/api/ver-mas-tarde`
+Agrega una película a la lista personal.
+
+**Body:**
+```json
+{
+  "usuario_id": 1,
+  "pelicula_id": 5
+}
+```
+
+#### **GET** `/api/ver-mas-tarde/:usuario_id`
+Obtiene la lista de películas guardadas.
+
+#### **DELETE** `/api/ver-mas-tarde/:id`
+Elimina una película de la lista.
+
+---
+
+### Perfil
+
+#### **PUT** `/api/usuarios/:id/foto`
+Actualiza la foto de perfil del usuario.
+
+**Body:**
+```json
+{
+  "foto_perfil": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+}
+```
+
+---
+
+## ⚙️ Configuración del Proyecto
+
+### Variables de Entorno (.env)
+
+```properties
+# Base de datos MySQL en Azure
+DB_HOST=uanfilmsdb.mysql.database.azure.com
+DB_USER=azureuser
+DB_PASSWORD=UanFilms123!
 DB_NAME=uan_db
 PORT=3000
+
+# Azure Storage
+AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;...
+
+# Azure Function
+AZURE_FUNCTION_URL=https://uanfilmsfunction.azurewebsites.net/api/ProcessResena
+
+# Email (Gmail con contraseña de aplicación)
+EMAIL_USER=samuelgh2424@gmail.com
+EMAIL_PASSWORD=lxae gsbw hpkb rizh
+FRONTEND_URL=http://172.177.1.151:3000
+```
+
+### Instalación Local
+
+```bash
+# Clonar repositorio
+git clone <tu-repositorio>
+cd TEST-PROYECTO
+
+# Instalar dependencias del backend
+cd backend
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales
+
+# Iniciar servidor
+node server.js
+```
+
+### Dependencias del Backend
+
+```json
+{
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.3.1",
+    "nodemailer": "^6.9.4"
+  }
+}
+```
+
+---
+
+## 🌐 Despliegue en Azure
+
+### 1. Crear Virtual Machine
+
+```bash
+# Crear Resource Group
+az group create --name UANFilms-RG --location eastus
+
+# Crear VM con Ubuntu
+az vm create \
+  --resource-group UANFilms-RG \
+  --name UANFilms-VM \
+  --image Ubuntu2204 \
+  --size Standard_B1s \
+  --admin-username azureuser \
+  --generate-ssh-keys
+
+# Abrir puerto 3000
+az vm open-port --port 3000 --resource-group UANFilms-RG --name UANFilms-VM
+```
+
+### 2. Configurar MySQL Flexible Server
+
+```bash
+# Crear servidor MySQL
+az mysql flexible-server create \
+  --resource-group UANFilms-RG \
+  --name uanfilmsdb \
+  --location eastus \
+  --admin-user azureuser \
+  --admin-password UanFilms123! \
+  --sku-name Standard_B1ms \
+  --version 8.0.21
+
+# Configurar firewall (solo IP de la VM)
+az mysql flexible-server firewall-rule create \
+  --resource-group UANFilms-RG \
+  --name uanfilmsdb \
+  --rule-name AllowVM \
+  --start-ip-address 172.177.1.151 \
+  --end-ip-address 172.177.1.151
+```
+
+### 3. Crear Storage Account
+
+```bash
+# Crear cuenta de almacenamiento
+az storage account create \
+  --name uanfilmsstorage \
+  --resource-group UANFilms-RG \
+  --location eastus \
+  --sku Standard_LRS
+
+# Crear contenedor para reseñas
+az storage container create \
+  --name resenas-procesadas \
+  --account-name uanfilmsstorage
+```
+
+### 4. Desplegar Azure Function
+
+```bash
+# Crear Function App
+az functionapp create \
+  --resource-group UANFilms-RG \
+  --consumption-plan-location eastus \
+  --runtime node \
+  --runtime-version 18 \
+  --functions-version 4 \
+  --name uanfilmsfunction \
+  --storage-account uanfilmsstorage
+
+# Configurar variables de entorno
+az functionapp config appsettings set \
+  --name uanfilmsfunction \
+  --resource-group UANFilms-RG \
+  --settings AZURE_STORAGE_CONNECTION_STRING="..."
+```
+
+### 5. Configurar en la VM
+
+```bash
+# Conectar por SSH
+ssh azureuser@172.177.1.151
+
+# Instalar Node.js
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Clonar proyecto
+git clone <tu-repo>
+cd TEST-PROYECTO/backend
+
+# Instalar dependencias
+npm install
+
+# Instalar PM2 para mantener el servidor activo
+sudo npm install -g pm2
+
+# Iniciar aplicación
+pm2 start server.js --name uanfilms-backend
+pm2 save
+pm2 startup
+```
+
+---
+
+## 💰 Tabla de Costos (Estimación Mensual)
+
+| Servicio | Configuración | Costo Mensual (USD) | Notas |
+|----------|---------------|---------------------|-------|
+| **Virtual Machine B1s** | 1 vCPU, 1 GB RAM | ~$7.59 | Siempre activa 24/7 |
+| **MySQL Flexible Server** | Burstable B1ms | ~$12.41 | Incluye 20 GB almacenamiento |
+| **Blob Storage** | LRS, < 1 GB | ~$0.02 | Primer GB casi gratis |
+| **Azure Function** | Consumption Plan | ~$0.00 | 1M ejecuciones gratis/mes |
+| **Network Egress** | < 5 GB | ~$0.00 | Primeros 5 GB gratis |
+| **TOTAL ESTIMADO** | | **~$20.02 USD/mes** | Proyecto educativo de bajo costo |
+
+> **Nota**: Estos son costos estimados para un proyecto educativo con bajo tráfico. En producción real, los costos variarían según el uso.
+
+### Optimizaciones de Costo Implementadas
+
+- ✅ VM de tier básico (B1s) en lugar de Standard
+- ✅ MySQL en modo Burstable (menor costo)
+- ✅ Azure Function en Consumption (pago por uso)
+- ✅ Storage LRS (replicación local solamente)
+- ✅ Sin servicios premium (App Service Plan, Load Balancer, etc.)
+
+---
+
+## 🔒 Seguridad Implementada
+
+### Network Security Group (NSG)
+
+```
+Reglas de entrada configuradas:
+┌─────────────────────────────────────────────────────┐
+│ Permitir SSH (22) desde IP específica               │
+│ Permitir HTTP (3000) desde 0.0.0.0/0 (público)      │
+│ Denegar MySQL (3306) desde 0.0.0.0/0                │
+└─────────────────────────────────────────────────────┘
+```
+
+### Protección de Base de Datos
+
+- ✅ Puerto 3306 cerrado al público
+- ✅ Firewall configurado: solo acepta conexiones desde la IP de la VM
+- ✅ Contraseñas hasheadas con bcrypt (10 rounds)
+- ✅ Conexión SSL/TLS con certificado DigiCert
+
+### Autenticación
+
+- ✅ Sistema de verificación por email
+- ✅ Tokens de verificación con expiración (24 horas)
+- ✅ Sesión almacenada en `localStorage` del navegador
+- ✅ Validación de sesión antes de operaciones sensibles
+
+---
+
+## 📂 Estructura del Proyecto
+
+```
+TEST-PROYECTO/
+├── backend/
+│   ├── node_modules/
+│   ├── .env                      # Variables de entorno (NO en Git)
+│   ├── .gitignore
+│   ├── server.js                 # Servidor Express principal
+│   ├── package.json
+│   ├── package-lock.json
+│   └── DigiCertGlobalRootG2.crt.pem  # Certificado SSL Azure
+│
+├── Frontend/
+│   ├── index.html               # Página principal (catálogo)
+│   ├── Login.html               # Inicio de sesión
+│   ├── Resgistrer.html          # Registro de usuarios
+│   ├── verificar.html           # Verificación de email
+│   ├── add-item.html            # Agregar películas
+│   ├── Details.html             # Detalles de película
+│   ├── opiniones.html           # Reseñas de película
+│   ├── perfil.html              # Perfil de usuario
+│   └── styles.css               # Estilos globales
+│
+├── resenas-processor/           # Azure Function (carpeta separada)
+│   ├── ProcessResena/
+│   │   ├── function.json
+│   │   └── index.js
+│   ├── host.json
+│   └── package.json
+│
+├── README.md                    # Este archivo
+└── .vscode/
+    └── settings.json
+```
+
+---
+
+## 🧪 Pruebas y Validación
+
+### Verificar Backend
+
+```bash
+# Test de conectividad
+curl http://172.177.1.151:3000/api/ping
+
+# Listar películas
+curl http://172.177.1.151:3000/api/peliculas
+```
+
+### Verificar MySQL
+
+```bash
+# Conectar desde la VM
+mysql -h uanfilmsdb.mysql.database.azure.com -u azureuser -p uan_db
+
+# Verificar tablas
+SHOW TABLES;
+SELECT COUNT(*) FROM peliculas;
+```
+
+### Verificar Azure Function
+
+```bash
+# Probar función manualmente
+curl -X POST https://uanfilmsfunction.azurewebsites.net/api/ProcessResena \
+  -H "Content-Type: application/json" \
+  -d '{"resena_id": 1, "texto": "Prueba", "pelicula_id": 1, "usuario_id": 1}'
+
+---
+
+
+# Verificar conexión desde la VM
+telnet uanfilmsdb.mysql.database.azure.com 3306
+```
+---
+### Diagramas
+
+- **Diagrama de Componentes**: Ver `/docs/componentes.png`
+- **Diagrama de Despliegue**: Ver `/docs/despliegue.png`
+- **Flujo de Reseñas**: Ver `/docs/flujo-resenas.png`
+
+### Referencias
+
+- [Azure Virtual Machines](https://docs.microsoft.com/azure/virtual-machines/)
+- [Azure MySQL Flexible Server](https://docs.microsoft.com/azure/mysql/flexible-server/)
+- [Azure Functions](https://docs.microsoft.com/azure/azure-functions/)
+- [Azure Blob Storage](https://docs.microsoft.com/azure/storage/blobs/)
+
+---
+
+
+## 📝 Changelog
+
+### Versión 3.0 (Entrega Final) - Abril 2023
+- ✅ Migración completa a Azure
+- ✅ Implementación de Azure Function para procesamiento de reseñas
+- ✅ Sistema de verificación de email
+- ✅ Fotos de perfil con Base64
+- ✅ Lista de "Ver más tarde"
+- ✅ Aislamiento de red (NSG + Firewall)
+
+### Versión 2.0 (Avance 2) - Marzo 2023
+- ✅ Separación de componentes en servidores independientes
+- ✅ Migración de on-premise a Azure
+- ✅ Implementación de Blob Storage
+
+### Versión 1.0 (Sprint 1) - Febrero 2023
+- ✅ Arquitectura 3-tier on-premise
+- ✅ CRUD de películas y reseñas
+- ✅ Sistema de autenticación básico
+
+---
+
+## 📄 Licencia
+
+Este proyecto fue desarrollado con fines educativos para la materia **Electiva III: Computación en la Nube** de la Universidad Antonio Nariño.
+
+---
+
+## 🔗 Enlaces
+
+- **Aplicación Web**: http://172.177.1.151:3000
+- **Repositorio GitHub**: (https://github.com/SamuelGH24/proyecto_app)
+- **Azure Portal**: https://portal.azure.com
+
+---
+
+## 📞 Contacto
+
+Para preguntas o soporte sobre el proyecto:
+- **Email**: samuelgh2424@gmail.com
+- **Repositorio**: [Issues en GitHub]
+
+---
+
