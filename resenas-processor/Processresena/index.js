@@ -8,6 +8,7 @@ module.exports = async function (context, req) {
     const { resena_id, texto, pelicula_id, usuario_id } = req.body;
 
     if (!resena_id || !texto) {
+      context.log('❌ Faltan parámetros requeridos');
       context.res = {
         status: 400,
         body: { error: 'Se requiere resena_id y texto' }
@@ -25,13 +26,19 @@ module.exports = async function (context, req) {
 
     // 3️⃣ Conectar a Blob Storage
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName = 'resenas';
+    const containerName = 'resenas-procesadas'; // ✅ CORREGIDO
 
+    if (!connectionString) {
+      throw new Error('AZURE_STORAGE_CONNECTION_STRING no está configurada');
+    }
+
+    context.log('🔗 Conectando a Blob Storage...');
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const containerClient = blobServiceClient.getContainerClient(containerName);
 
+    // Crear contenedor si no existe
     await containerClient.createIfNotExists();
-    await containerClient.setAccessPolicy('blob'); // acceso público
+    context.log(`✅ Contenedor verificado: ${containerName}`);
 
     // 4️⃣ Subir archivo
     const buffer = Buffer.from(textoMinusculas, 'utf8');
@@ -42,6 +49,7 @@ module.exports = async function (context, req) {
     context.log(`☁️ Archivo subido: ${archivoUrl}`);
 
     // 5️⃣ Guardar URL en MySQL
+    context.log('💾 Conectando a MySQL...');
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -55,10 +63,10 @@ module.exports = async function (context, req) {
       SET archivo_url = ?, archivo_procesado = TRUE
       WHERE id = ?
     `;
-    await connection.execute(updateQuery, [archivoUrl, resena_id]);
+    const [result] = await connection.execute(updateQuery, [archivoUrl, resena_id]);
     await connection.end();
 
-    context.log('💾 URL guardada en la base de datos');
+    context.log(`💾 URL guardada en la base de datos (filas afectadas: ${result.affectedRows})`);
 
     // 6️⃣ Respuesta exitosa
     context.res = {

@@ -2,7 +2,6 @@
   "name": "resenas-processor",
   "version": "1.0.0",
   "description": "Azure Functions para procesar reseñas",
-  "main": "src/functions/*.js",
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
