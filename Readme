@@ -602,11 +602,7 @@ curl -X POST https://uanfilmsfunction.azurewebsites.net/api/ProcessResena \
 telnet uanfilmsdb.mysql.database.azure.com 3306
 ```
 ---
-### Diagramas
 
-- **Diagrama de Componentes**: Ver `/docs/componentes.png`
-- **Diagrama de Despliegue**: Ver `/docs/despliegue.png`
-- **Flujo de Reseñas**: Ver `/docs/flujo-resenas.png`
 
 ### Referencias
 
